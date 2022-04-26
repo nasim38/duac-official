@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Image from "next/image";
 import { Row, Col, Container } from "react-bootstrap";
-import Events from "../components/Events";
+import EventsCard from "../components/EventsCard";
 import HomeCarousel from "../components/HomeCarousel";
 import MainNavbar from "../components/MainNavbar";
 import MessageCard from "../components/MessageCard";
@@ -31,10 +31,10 @@ export default function Home() {
         <Container>
           <Row className="my-5">
             <Col>
-              <Events />
+              <EventsCard />
             </Col>
             <Col>
-              <Events />
+              <EventsCard />
             </Col>
             <Col>
               <NoticesCard />

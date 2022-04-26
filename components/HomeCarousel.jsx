@@ -34,9 +34,7 @@ const HomeCarousel = () => {
     <Carousel>
       {carouselItemArray.map((item) => (
         <Carousel.Item key={item.label}>
-          <div className="overflow-hidden">
-            <Image className="d-block w-100" src={item.src} alt={item.label} />
-          </div>
+          <Image className="d-block w-100" src={item.src} alt={item.label} />
           <Carousel.Caption>
             <h3>{item.label}</h3>
             <p>{item.description}</p>
