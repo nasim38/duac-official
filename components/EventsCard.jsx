@@ -28,6 +28,9 @@ const EventsCard = () => {
   // returning the component here -----------------------
   return (
     <div className="px-4 py-2 border">
+      {/* Determining the title of the events card [upcoming events/ past events] --------------- */}
+      {/* { >>>>condition based on date of the event<<<<} */}
+      {/* displaying card contents ---------------------------  */}
       {eventData.map((event) => (
         <div
           key={event.name}
