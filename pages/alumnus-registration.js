@@ -1,14 +1,40 @@
-import React from "react";
-import { useForm } from "react-hook-form";
+import React, { useState } from "react";
 import { Container, Row, Stack } from "react-bootstrap";
+// react-hook-form for form data management and validation
+import { useForm } from "react-hook-form";
 
 export default function App() {
+  // initiating states ----------------------
+  const [error, setError] = useState(null);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
-  const onSubmit = (data) => console.log(data);
+
+  // custom function to POST data using REST api -----------
+  const postData = async (url, formData) => {
+    try {
+      const postedData = await fetch(url, {
+        body: formData,
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+    } catch (err) {
+      setError(err);
+    }
+  };
+
+  const onSubmit = async (formData) => {
+    // modifying original 'formData' before 'stringify' to match strapi json format--{ data: formData }--
+    const submissionData = JSON.stringify({ data: formData });
+    console.log(submissionData);
+    postData("http://localhost:1337/api/alumni", submissionData);
+    // checking error and showing confirmation messege --------
+    error
+      ? alert("An error Occured! Try again, " + "Error Info: " + error)
+      : alert("Registration form submitted successfully, Pending for approval");
+  };
 
   return (
     <Container>
@@ -70,14 +96,14 @@ export default function App() {
           {...register("bloodGroup", { required: true })}
         >
           <option value="">Choose one </option>
-          <option value="O+">O+ </option>
-          <option value="O-">O- </option>
-          <option value="A+">A+ </option>
-          <option value="A-">A- </option>
-          <option value="B+">B+ </option>
-          <option value="B-">B- </option>
-          <option value="AB+">AB+ </option>
-          <option value="AB-">AB- </option>
+          <option value="O positive">O+ </option>
+          <option value="O negative">O- </option>
+          <option value="A positive">A+ </option>
+          <option value="A negative">A- </option>
+          <option value="B positive">B+ </option>
+          <option value="B negative">B- </option>
+          <option value="AB positive">AB+ </option>
+          <option value="AB negative">AB- </option>
         </select>
         {errors.bloodGroup ? (
           <p className="text-danger">
@@ -110,7 +136,7 @@ export default function App() {
             className="form-check-input"
             id="married"
             type="radio"
-            value="Married"
+            value={true}
           />
           <label className="form-check-label" htmlFor="married">
             {" "}
@@ -123,7 +149,7 @@ export default function App() {
             className="form-check-input"
             id="unmarried"
             type="radio"
-            value="Unmarried"
+            value={false}
           />
           <label className="form-check-label" htmlFor="unmarried">
             {" "}
@@ -224,8 +250,7 @@ export default function App() {
             },
             maxLength: {
               value: 9,
-              message:
-                "* Max length exceeded, try following suggested pattern of session info",
+              message: "* Max length exceeded, try following the example",
             },
             pattern: {
               value: /(?:(?:18|19|20|21)[0-9]{2})-(?:(?:18|19|20|21)[0-9]{2})/i,
