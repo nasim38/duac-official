@@ -1,9 +1,15 @@
+// Basic for submission with validation is done and running perfectly
+// TODO: profile picture upload function is not implemented
+
+// MAIN CODE STRATS HERE ------------------------------------------
 import React, { useState } from "react";
 import { Container, Row, Stack } from "react-bootstrap";
 // react-hook-form for form data management and validation
 import { useForm } from "react-hook-form";
 
-export default function App() {
+export default function AlumnusRegistration() {
+  // dynamic api url ------------------------
+  const apiBaseUrl = "http://localhost:1337";
   // initiating states ----------------------
   const [error, setError] = useState(null);
   const {
@@ -17,7 +23,10 @@ export default function App() {
     try {
       const postedData = await fetch(url, {
         body: formData,
+        // works without profile picture upload-------------------
         headers: { "Content-Type": "application/json" },
+        // for uploading profile picture -------------------------
+        // headers: { "Content-Type": "multipart/form-data" },
         method: "POST",
       });
     } catch (err) {
@@ -26,10 +35,18 @@ export default function App() {
   };
 
   const onSubmit = async (formData) => {
+    // console.log(data);
+    // // creating Form FormData() to finalize form data----------
+    // const formData = new FormData();
+    // // appending profilePicture[0] in the data object
+    // formData.append("pp", data.profilePicture[0]);
+    // console.log(formData);
+    // // formData.append("profilePicture", data.profilePicture[0]);
+    // // formData.append("data", data.profilePicture[0]);
+
     // modifying original 'formData' before 'stringify' to match strapi json format--{ data: formData }--
     const submissionData = JSON.stringify({ data: formData });
-    console.log(submissionData);
-    postData("http://localhost:1337/api/alumni", submissionData);
+    postData(`${apiBaseUrl}/api/alumni`, submissionData);
     // checking error and showing confirmation messege --------
     error
       ? alert("An error Occured! Try again, " + "Error Info: " + error)
@@ -38,7 +55,7 @@ export default function App() {
 
   return (
     <Container>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form name="registrationForm" onSubmit={handleSubmit(onSubmit)}>
         {/* Full name field and validation -------------------------  */}
         <label htmlFor="fullName">Full Name</label>
         <input
@@ -292,8 +309,27 @@ export default function App() {
             <small>* Your hall name is required!</small>
           </p>
         ) : null}
+        {/* Alumnus Profile picture filed and validation --------------- */}
+        {/* <label className="custom-file-label" htmlFor="profilePicture">
+          Select Profile Picture
+        </label>
+        <div className="input-group">
+          <div className="custom-file">
+            <input
+              type="file"
+              className="custom-file-input"
+              id="profilePicture"
+              {...register("profilePicture", { required: false })}
+            />
+          </div>
+        </div>
+        {errors.profilePicture ? (
+          <p className="text-danger">
+            <small>* Your profile picture is required!</small>
+          </p>
+        ) : null} */}
         {/* Submit button for final submission -----------------  */}
-        <input className="btn btn-primary" type="submit" />
+        <input className="btn btn-primary mt-3" type="submit" />
       </form>
     </Container>
   );
