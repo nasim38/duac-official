@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Row, Stack } from "react-bootstrap";
 // react-hook-form for form data management and validation
 import { useForm } from "react-hook-form";
@@ -6,20 +6,39 @@ import { useForm } from "react-hook-form";
 export default function CloudinaryTest() {
   // initiating states ----------------------
   const [error, setError] = useState();
-  const [file, setFile] = useState();
+  const [file, setFile] = useState(undefined); // file gets updated onChange of form input
+  // stated of image preview
+  const [preview, setPreview] = useState();
+
+  // initiating react-hook-form assets
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
+  // useeffect state for updating image preview --------------
+  // code from: https://stackoverflow.com/questions/38049966/get-image-preview-before-uploading-in-react
+  // ans from: Jay Wick
+  useEffect(() => {
+    if (!file) {
+      setPreview(undefined);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+
+    // free memory when ever this component is unmounted
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
   // custom function to POST data using REST api ---------------------------------
   const postData = async (url, formData, postType) => {
     //checking for post header type for fetch api
-    let header = {};
+    let header = { "Content-Type": "application/json" };
     if (postType == "FormData")
       header = { "Content-Type": "multipart/form-data" };
-    else header = { "Content-Type": "application/json" };
     console.log(header);
     try {
       const postedData = await fetch(url, {
@@ -39,8 +58,6 @@ export default function CloudinaryTest() {
   const onSubmit = async (inputData) => {
     try {
       console.log(inputData);
-      // setting uploaded image to file state
-      setFile(inputData.picture[0]);
       // copying inputData for modification without hampering oiginal input data
       let data = JSON.parse(JSON.stringify(inputData));
       // delteing 'picture' filed from data object for applicaiton/json header type input
@@ -48,6 +65,7 @@ export default function CloudinaryTest() {
 
       // modifying original 'formData' before 'stringify' to match strapi json format--{ data: formData }--
       const submissionData = JSON.stringify({ data: data });
+
       // postedData must be awaited.
       const postedData = await postData(
         "http://localhost:1337/api/test-cloudinaries",
@@ -63,16 +81,20 @@ export default function CloudinaryTest() {
         const entryId = postedData.data.id;
         console.log(`Created Entry Id: ${entryId}`);
         console.log(file);
+
         // creating FormData object
         const formData = new FormData();
-        formData.append("files", file);
+        formData.append("files", file); //file state got updated from form input field
+
         // formData.append("files", inputData.picture[0]);
         formData.append("ref", "api::test-cloudinary.test-cloudinary"); //name of content type
         formData.append("refId", entryId); //id of content type
         formData.append("field", "picture"); //name of key for the content type
+
         // logging formData object in tabular form in colsole
         console.log("Form Data: ");
         console.table(Object.fromEntries(formData));
+
         // posting newly formed formData with file attached
         const postedFormData = await postData(
           "http://localhost:1337/api/upload",
@@ -126,16 +148,23 @@ export default function CloudinaryTest() {
         <label className="custom-file-label" htmlFor="picture">
           Select Profile Picture
         </label>
-        <div className="input-group">
+        <div className="input-group border-2 border p-2">
           <div className="custom-file">
             <input
               name="picture"
               type="file"
               className="custom-file-input"
               id="picture"
-              {...register("picture", { required: true })}
+              {...register("picture", {
+                required: true,
+                onChange: (e) => {
+                  setFile(e.target.files[0]);
+                },
+              })}
             />
           </div>
+          {/* previewing uploaded image file  */}
+          {file && <img height={100} width={100} src={preview} />}
         </div>
         {errors.picture ? (
           <p className="text-danger">
