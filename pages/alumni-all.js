@@ -3,8 +3,12 @@ import { Table } from "react-bootstrap";
 import useFetch from "./../hooks/useFetch";
 
 const AlumniAll = () => {
+  // dynamic api url ------------------------
+  const apiBaseUrl = "http://localhost:1337";
   // fetching all alumni data from database -----------------
-  const { data, error, loading } = useFetch("http://localhost:1337/api/alumni");
+  const { data, error, loading } = useFetch(
+    `${apiBaseUrl}/api/alumni?populate=profilePicture`
+  );
 
   if (loading)
     return (
@@ -36,6 +40,19 @@ const AlumniAll = () => {
         {data.data.map((alumnus) => (
           <tr key={alumnus.id}>
             <td>{alumnus.id}</td>
+            <td>
+              {alumnus.attributes.profilePicture.data && (
+                <img
+                  className="rounded-circle "
+                  height={50}
+                  width={50}
+                  src={
+                    alumnus.attributes.profilePicture.data.attributes.formats
+                      .thumbnail.url
+                  }
+                />
+              )}
+            </td>
             <td>{alumnus.attributes.fullName}</td>
             <td>{alumnus.attributes.phoneNumber}</td>
             <td>{alumnus.attributes.email}</td>
