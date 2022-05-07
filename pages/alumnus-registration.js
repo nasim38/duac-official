@@ -2,7 +2,7 @@
 // TODO: profile picture upload function is not implemented
 
 // MAIN CODE STRATS HERE ------------------------------------------
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Row, Stack } from "react-bootstrap";
 // react-hook-form for form data management and validation
 import { useForm } from "react-hook-form";
@@ -11,42 +11,107 @@ export default function AlumnusRegistration() {
   // dynamic api url ------------------------
   const apiBaseUrl = "http://localhost:1337";
   // initiating states ----------------------
-  const [error, setError] = useState(null);
+  const [error, setError] = useState();
+  const [file, setFile] = useState(undefined); // file gets updated onChange of form input
+  // stated of image preview
+  const [preview, setPreview] = useState();
+
+  // initiating react-hook-form assets
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
-  // custom function to POST data using REST api -----------
-  const postData = async (url, formData) => {
+  // useeffect state for updating image preview -------------------------------
+  // code from: https://stackoverflow.com/questions/38049966/get-image-preview-before-uploading-in-react
+  // ans from: Jay Wick
+  useEffect(() => {
+    if (!file) {
+      setPreview(undefined);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+
+    // free memory when ever this component is unmounted
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  // custom function to POST data using REST api ---------------------------------
+  const postData = async (url, formData, postType) => {
+    //checking for post header type for fetch api
+    let header = { "Content-Type": "application/json" };
+    // because multipart/form-data header is automatically get detected,
+    // when body is a FormData() object.
+    // source: https://github.com/github/fetch/issues/505 , Ans form: dgraham
+    if (postType == "FormData") header = {};
+    console.log(header);
     try {
       const postedData = await fetch(url, {
         body: formData,
-        // works without profile picture upload-------------------
-        headers: { "Content-Type": "application/json" },
-        // for uploading profile picture -------------------------
-        // headers: { "Content-Type": "multipart/form-data" },
+        headers: header,
         method: "POST",
+        redirect: "follow",
       });
+      // returning the 'promise' object from fetch api in json format
+      return await postedData.json();
     } catch (err) {
       setError(err);
     }
   };
 
-  const onSubmit = async (formData) => {
-    // console.log(data);
-    // // creating Form FormData() to finalize form data----------
-    // const formData = new FormData();
-    // // appending profilePicture[0] in the data object
-    // formData.append("pp", data.profilePicture[0]);
-    // console.log(formData);
-    // // formData.append("profilePicture", data.profilePicture[0]);
-    // // formData.append("data", data.profilePicture[0]);
+  // on submit handler ------------------------------------------------------------
+  const onSubmit = async (inputData) => {
+    try {
+      // copying inputData for modification without hampering oiginal input data
+      let data = JSON.parse(JSON.stringify(inputData));
+      // delteing 'picture' filed from new data object for applicaiton/json header type input
+      delete data.profilePicture;
 
-    // modifying original 'formData' before 'stringify' to match strapi json format--{ data: formData }--
-    const submissionData = JSON.stringify({ data: formData });
-    postData(`${apiBaseUrl}/api/alumni`, submissionData);
+      // modifying original 'formData' before 'stringify', to match strapi json format--{ data: formData }--
+      const submissionData = JSON.stringify({ data: data });
+
+      // postedData must be awaited.
+      const postedData = await postData(
+        `${apiBaseUrl}/api/alumni`,
+        submissionData
+      );
+
+      if (postedData.error)
+        alert(
+          `Error Code: ${postedData.error.status} \nError Name: ${postedData.error.name} \nError Message: ${postedData.error.message}`
+        );
+      else {
+        // getting the refId of strapi collection data
+        const entryId = postedData.data.id;
+        console.log(`Created Entry Id: ${entryId}`);
+
+        // --------------------------Second fetch: Uploading Image-----------------------------------------
+        // ------------------uploading image to the newly created record-----------------------------------
+        // creating FormData object
+        const formData = new FormData();
+        formData.append("files", file); //file state got updated from form input field
+        formData.append("ref", "api::alumnus.alumnus"); //name of content type
+        formData.append("refId", entryId); //id of content type
+        formData.append("field", "profilePicture"); //name of key for the content type
+
+        // logging formData object in tabular form in colsole for check
+        // console.table(Object.fromEntries(formData));
+
+        // posting newly formed formData with image file attached
+        const postedFormData = await postData(
+          `${apiBaseUrl}/api/upload`,
+          formData,
+          "FormData"
+        );
+        console.log(postedFormData);
+      }
+    } catch (err) {
+      console.log(`Error Happended: ${err}`);
+    }
+
     // checking error and showing confirmation messege --------
     error
       ? alert("An error Occured! Try again, " + "Error Info: " + error)
@@ -310,7 +375,7 @@ export default function AlumnusRegistration() {
           </p>
         ) : null}
         {/* Alumnus Profile picture filed and validation --------------- */}
-        {/* <label className="custom-file-label" htmlFor="profilePicture">
+        <label className="custom-file-label" htmlFor="profilePicture">
           Select Profile Picture
         </label>
         <div className="input-group">
@@ -319,15 +384,22 @@ export default function AlumnusRegistration() {
               type="file"
               className="custom-file-input"
               id="profilePicture"
-              {...register("profilePicture", { required: false })}
+              {...register("profilePicture", {
+                required: true,
+                onChange: (e) => {
+                  setFile(e.target.files[0]);
+                },
+              })}
             />
           </div>
+          {/* previewing uploaded image file  */}
+          {file && <img height={100} width={100} src={preview} />}
         </div>
         {errors.profilePicture ? (
           <p className="text-danger">
             <small>* Your profile picture is required!</small>
           </p>
-        ) : null} */}
+        ) : null}{" "}
         {/* Submit button for final submission -----------------  */}
         <input className="btn btn-primary mt-3" type="submit" />
       </form>

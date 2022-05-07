@@ -17,7 +17,7 @@ export default function CloudinaryTest() {
     formState: { errors },
   } = useForm();
 
-  // useeffect state for updating image preview --------------
+  // useeffect state for updating image preview -------------------------------
   // code from: https://stackoverflow.com/questions/38049966/get-image-preview-before-uploading-in-react
   // ans from: Jay Wick
   useEffect(() => {
@@ -82,8 +82,8 @@ export default function CloudinaryTest() {
         const entryId = postedData.data.id;
         console.log(`Created Entry Id: ${entryId}`);
 
-        // --------------------------Second fetch--------------------------------------------
-
+        // --------------------------Second fetch: Uploading Image-----------------------------------------
+        // ------------------uploading image to the newly created record-----------------------------------
         // creating FormData object
         const formData = new FormData();
         formData.append("files", file); //file state got updated from form input field
@@ -91,11 +91,10 @@ export default function CloudinaryTest() {
         formData.append("refId", entryId); //id of content type
         formData.append("field", "picture"); //name of key for the content type
 
-        // logging formData object in tabular form in colsole
-        console.log("Form Data: ");
-        console.table(Object.fromEntries(formData));
+        // logging formData object in tabular form in colsole for check
+        // console.table(Object.fromEntries(formData));
 
-        // posting newly formed formData with file attached
+        // posting newly formed formData with image file attached
         const postedFormData = await postData(
           "http://localhost:1337/api/upload",
           formData,
