@@ -37,8 +37,10 @@ export default function CloudinaryTest() {
   const postData = async (url, formData, postType) => {
     //checking for post header type for fetch api
     let header = { "Content-Type": "application/json" };
-    if (postType == "FormData")
-      header = { "Content-Type": "multipart/form-data" };
+    // because multipart/form-data header is automatically get detected,
+    // when body is a FormData() object.
+    // source: https://github.com/github/fetch/issues/505 , Ans form: dgraham
+    if (postType == "FormData") header = {};
     console.log(header);
     try {
       const postedData = await fetch(url, {
@@ -57,13 +59,12 @@ export default function CloudinaryTest() {
   // on submit handler ------------------------------------------------------------
   const onSubmit = async (inputData) => {
     try {
-      console.log(inputData);
       // copying inputData for modification without hampering oiginal input data
       let data = JSON.parse(JSON.stringify(inputData));
-      // delteing 'picture' filed from data object for applicaiton/json header type input
+      // delteing 'picture' filed from new data object for applicaiton/json header type input
       delete data.picture;
 
-      // modifying original 'formData' before 'stringify' to match strapi json format--{ data: formData }--
+      // modifying original 'formData' before 'stringify', to match strapi json format--{ data: formData }--
       const submissionData = JSON.stringify({ data: data });
 
       // postedData must be awaited.
@@ -71,7 +72,7 @@ export default function CloudinaryTest() {
         "http://localhost:1337/api/test-cloudinaries",
         submissionData
       );
-      console.log(postedData);
+
       if (postedData.error)
         alert(
           `Error Code: ${postedData.error.status} \nError Name: ${postedData.error.name} \nError Message: ${postedData.error.message}`
@@ -80,13 +81,12 @@ export default function CloudinaryTest() {
         // getting the refId of strapi collection data
         const entryId = postedData.data.id;
         console.log(`Created Entry Id: ${entryId}`);
-        console.log(file);
+
+        // --------------------------Second fetch--------------------------------------------
 
         // creating FormData object
         const formData = new FormData();
         formData.append("files", file); //file state got updated from form input field
-
-        // formData.append("files", inputData.picture[0]);
         formData.append("ref", "api::test-cloudinary.test-cloudinary"); //name of content type
         formData.append("refId", entryId); //id of content type
         formData.append("field", "picture"); //name of key for the content type
@@ -101,6 +101,7 @@ export default function CloudinaryTest() {
           formData,
           "FormData"
         );
+        console.log(postedFormData);
       }
     } catch (err) {
       console.log(`Error Happended: ${err}`);
